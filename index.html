@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบข้อมูลน้ำท่วมเมืองน่าน</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #e74c3c;
+            --blue: #3498db;
+            --sidebar-w: 340px;
+        }
+
+        body { font-family: 'Sarabun', sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; background: #f4f7f6; }
+
+        /* Navigation */
+        nav { background: var(--primary); display: flex; justify-content: center; z-index: 1000; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .nav-link { padding: 15px 25px; color: white; text-decoration: none; font-weight: bold; cursor: pointer; border-bottom: 4px solid transparent; }
+        .nav-link.active { border-bottom: 4px solid var(--accent); background: rgba(255,255,255,0.1); }
+
+        .page-content { display: none; flex-grow: 1; height: calc(100vh - 54px); }
+        .page-content.active { display: flex; }
+
+        /* Sidebar */
+        .sidebar { width: var(--sidebar-w); background: var(--primary); color: white; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; }
+        .control-group { margin-bottom: 20px; }
+        .label { display: block; margin-bottom: 10px; color: var(--blue); font-weight: bold; font-size: 0.9rem; }
+        .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .btn { background: #34495e; border: 1px solid #555; color: #ccc; padding: 8px; cursor: pointer; border-radius: 4px; font-size: 0.8rem; transition: 0.3s; }
+        .btn:hover { background: #456789; color: white; }
+        .btn.active { background: var(--accent); color: white; border-color: white; font-weight: bold; }
+
+        /* Main View Areas */
+        .main-view { flex-grow: 1; position: relative; background: #000; display: flex; align-items: center; justify-content: center; }
+
+        /* Video Player Page 1 */
+        .video-container { width: 90%; max-width: 1800px; border: 4px solid white; border-radius: 8px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        video { width: 100%; display: block; }
+
+        /* Map Area Page 2 */
+        #leaflet-map { width: 100%; height: 100%; background: #ddd; }
+        
+        /* Legend */
+        .map-info { position: absolute; bottom: 20px; right: 20px; background: rgba(0,0,0,0.7); color: white; padding: 10px 15px; border-radius: 5px; font-size: 0.8rem; z-index: 1000; pointer-events: none; }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="nav-link active" onclick="showPage('page1')">1. จำลองพายุวิภา (Video)</div>
+        <div class="nav-link" onclick="showPage('page2')">2. แผนที่ความเสี่ยง (Map)</div>
+        <div class="nav-link">3. หลักระดับน้ำ</div>
+        <div class="nav-link">4. ข้อมูลสำรวจจริง</div>
+    </nav>
+
+    <section id="page1" class="page-content active">
+        <div class="main-view" style="background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('https://www.transparenttextures.com/patterns/dark-matter.png');">
+            <div class="video-container">
+                <video controls autoplay loop muted>
+                    <source src="Sim_Flood_Nan_All.mp4" type="video/mp4">
+                    เบราว์เซอร์ไม่รองรับวิดีโอ
+                </video>
+            </div>
+            <div style="position: absolute; bottom: 40px; color: white; text-align: center;">
+                <h3>เหตุการณ์พายุวิภา ปี 2568 (Simulation)</h3>
+            </div>
+        </div>
+    </section>
+
+    <section id="page2" class="page-content">
+        <aside class="sidebar">
+            <h3 style="border-bottom: 1px solid #444; padding-bottom: 10px;">🗺️ แผนที่ความเสี่ยง</h3>
+            
+            <div class="control-group">
+                <span class="label">🗓️ คาบปีการเกิด (Return Period)</span>
+                <div class="btn-grid" id="rp-btns">
+                    <button class="btn active" onclick="updateMap('rp', '010', this)">10 ปี</button>
+                    <button class="btn" onclick="updateMap('rp', '025', this)">25 ปี</button>
+                    <button class="btn" onclick="updateMap('rp', '050', this)">50 ปี</button>
+                    <button class="btn" onclick="updateMap('rp', '100', this)">100 ปี</button>
+                    <button class="btn" onclick="updateMap('rp', '200', this)">200 ปี</button>
+                    <button class="btn" onclick="updateMap('rp', '500', this)">500 ปี</button>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <span class="label">📏 ความเสี่ยงน้ำท่วม (Depth)</span>
+                <div class="btn-grid" id="depth-btns">
+                    <button class="btn active" onclick="updateMap('depth', '030', this)">0.3 เมตร</button>
+                    <button class="btn" onclick="updateMap('depth', '050', this)">0.5 เมตร</button>
+                    <button class="btn" onclick="updateMap('depth', '100', this)">1.0 เมตร</button>
+                    <button class="btn" onclick="updateMap('depth', '150', this)">1.5 เมตร</button>
+                    <button class="btn" onclick="updateMap('depth', '300', this)">3.0 เมตร</button>
+                    <button class="btn" onclick="updateMap('depth', '500', this)">5.0 เมตร</button>
+                </div>
+            </div>
+
+            <p style="font-size: 0.75rem; color: #888; margin-top: auto;">* คลิกเลือก "ปี" หรือ "ความลึก" เพื่อเปลี่ยนเลเยอร์บนแผนที่</p>
+        </aside>
+
+        <div class="main-view">
+            <div id="leaflet-map"></div>
+            <div class="map-info" id="map-status">Layer: TR_010y.png</div>
+        </div>
+    </section>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        // --- ส่วนการสลับหน้า ---
+        function showPage(pageId) {
+            document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            event.currentTarget.classList.add('active');
+            
+            // ถ้าเปิดหน้า 2 ให้รีเฟรชขนาดแผนที่ Leaflet
+            if(pageId === 'page2') {
+                setTimeout(() => { map.invalidateSize(); }, 200);
+            }
+        }
+
+        // --- ส่วนจัดการแผนที่ Leaflet (หน้า 2) ---
+        var map = L.map('leaflet-map').setView([18.783, 100.775], 15);
+        
+        // Base Map (ฟรี)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        // พิกัดขอบเขตที่คุณระบุ (แปลง UTM เป็น Lat/Long)
+        var imageBounds = [
+            [18.74969577, 100.7501915], // ล่างซ้าย
+            [18.81643900, 100.8059337]  // บนขวา
+        ];
+
+        var currentOverlay = null;
+        var currentRP = "010";
+        var currentDepth = "030";
+
+        function updateMap(type, val, btn) {
+            // ปรับปุ่ม Active
+            const parent = btn.parentElement;
+            parent.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            if (type === 'rp') currentRP = val;
+            if (type === 'depth') currentDepth = val;
+
+            // กำหนดชื่อไฟล์ตามที่คุณต้องการ
+            // ถ้าเลือกปี จะใช้ TR_xxx.png | ถ้าเลือกความลึก จะใช้ Prob_xxx.png
+            let fileName = (type === 'rp') ? `TR_${currentRP}y.png` : `Prob_${currentDepth}m.png`;
+
+            if (currentOverlay) {
+                map.removeLayer(currentOverlay);
+            }
+
+            // สร้าง Overlay ใหม่
+            currentOverlay = L.imageOverlay(fileName, imageBounds, {
+                opacity: 0.7,
+                interactive: true
+            }).addTo(map);
+
+            document.getElementById('map-status').innerText = `แสดงไฟล์: ${fileName}`;
+        }
+
+        // โหลดเลเยอร์เริ่มต้น
+        updateMap('rp', '010', document.querySelector('#rp-btns .btn.active'));
+
+    </script>
+</body>
+</html>
