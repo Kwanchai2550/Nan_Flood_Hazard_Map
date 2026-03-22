@@ -157,17 +157,24 @@
         }
 
         // ฟังก์ชันสร้าง Base Layer สำหรับทุกหน้า
-        function getBaseLayers() {
-            return {
-                    "ถนน": L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'),
-                     "ดาวเทียม": L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}')
-            };
-        }
+function getBaseLayers() {
+    return {
+        "แผนที่ถนน (OSM)": L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap'
+        }),
+        "ดาวเทียม (Google)": L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+            attribution: '&copy; Google Maps'
+        }),
+        "ดาวเทียม (Esri)": L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: 'Tiles &copy; Esri'
+        })
+    };
+}
 
         // --- ตั้งค่าหน้า 2 ---
 var base2 = getBaseLayers();
 var map2 = L.map('leaflet-map-p2', {
-    layers: [base2["ดาวเทียม"]] // เริ่มต้นด้วยดาวเทียม
+    layers: [base2["ดาวเทียม (Google)"]] // เริ่มต้นด้วยดาวเทียม
 }).setView([18.783, 100.775], 15);
 
 L.control.layers(base2).addTo(map2); // เพิ่มปุ่มสลับเลเยอร์
@@ -193,7 +200,7 @@ function updateMap2(type, val, btn) {
         // --- ตั้งค่าหน้า 3 ---
 var base3 = getBaseLayers();
 var map3 = L.map('leaflet-map-p3', {
-    layers: [base3["ดาวเทียม"]]
+    layers: [base3["ดาวเทียม (Google)"]]
 }).setView([18.783, 100.775], 15);
 
 L.control.layers(base3).addTo(map3);
