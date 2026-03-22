@@ -157,53 +157,60 @@
         }
 
         // --- ตั้งค่าหน้า 2 ---
-        var map2 = L.map('leaflet-map-p2').setView([18.783, 100.775], 15);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map2);
+var base2 = getBaseLayers();
+var map2 = L.map('leaflet-map-p2', {
+    layers: [base2["ดาวเทียม"]] // เริ่มต้นด้วยดาวเทียม
+}).setView([18.783, 100.775], 15);
 
-        var overlay2 = null;
-        var p2RP = "010";
-        var p2Depth = "030";
+L.control.layers(base2).addTo(map2); // เพิ่มปุ่มสลับเลเยอร์
 
-        function updateMap2(type, val, btn) {
-            if (btn) {
-                btn.parentElement.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-            }
-            if (type === 'rp') p2RP = val;
-            if (type === 'depth') p2Depth = val;
+var overlay2 = null;
+var p2RP = "010";
+var p2Depth = "030";
 
-            let fileName = (type === 'rp') ? `TR_${p2RP}y.png` : `Prob_${p2Depth}m.png`;
-            if (overlay2) map2.removeLayer(overlay2);
-            overlay2 = L.imageOverlay(fileName, imageBounds, { opacity: 0.7 }).addTo(map2);
-            document.getElementById('map-status-p2').innerText = `แสดงไฟล์: ${fileName}`;
-        }
+function updateMap2(type, val, btn) {
+    if (btn) {
+        btn.parentElement.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    }
+    if (type === 'rp') p2RP = val;
+    if (type === 'depth') p2Depth = val;
+
+    let fileName = (type === 'rp') ? `TR_${p2RP}y.png` : `Prob_${p2Depth}m.png`;
+    if (overlay2) map2.removeLayer(overlay2);
+    overlay2 = L.imageOverlay(fileName, imageBounds, { opacity: 0.7 }).addTo(map2);
+    document.getElementById('map-status-p2').innerText = `แสดงไฟล์: ${fileName}`;
+}
 
         // --- ตั้งค่าหน้า 3 ---
-        var map3 = L.map('leaflet-map-p3').setView([18.783, 100.775], 15);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map3);
+var base3 = getBaseLayers();
+var map3 = L.map('leaflet-map-p3', {
+    layers: [base3["ดาวเทียม"]]
+}).setView([18.783, 100.775], 15);
 
-        var overlay3 = null;
-        var p3H = "010";
-        var p3T = "1";
+L.control.layers(base3).addTo(map3);
 
-        function updateMap3(type, val, btn) {
-            if (btn) {
-                btn.parentElement.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-            }
-            if (type === 'h') p3H = val;
-            if (type === 't') p3T = val;
+var overlay3 = null;
+var p3H = "010";
+var p3T = "1";
 
-            // รูปแบบชื่อไฟล์: N1_H[height]_T[time].png
-            let fileName = `N1_H${p3H}_T${p3T}.png`;
-            if (overlay3) map3.removeLayer(overlay3);
-            overlay3 = L.imageOverlay(fileName, imageBounds, { opacity: 0.7 }).addTo(map3);
-            document.getElementById('map-status-p3').innerText = `แสดงไฟล์: ${fileName}`;
-        }
+function updateMap3(type, val, btn) {
+    if (btn) {
+        btn.parentElement.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    }
+    if (type === 'h') p3H = val;
+    if (type === 't') p3T = val;
 
-        // โหลดเลเยอร์เริ่มต้น
-        updateMap2('rp', '010', document.querySelector('#rp-btns .btn.active'));
-        updateMap3('h', '010', document.querySelector('#n1-h-btns .btn.active'));
+    let fileName = `N1_H${p3H}_T${p3T}.png`;
+    if (overlay3) map3.removeLayer(overlay3);
+    overlay3 = L.imageOverlay(fileName, imageBounds, { opacity: 0.7 }).addTo(map3);
+    document.getElementById('map-status-p3').innerText = `แสดงไฟล์: ${fileName}`;
+}
+
+// โหลดเลเยอร์เริ่มต้น
+updateMap2('rp', '010', document.querySelector('#rp-btns .btn.active'));
+updateMap3('h', '010', document.querySelector('#n1-h-btns .btn.active'));
 
     </script>
 </body>
