@@ -156,6 +156,14 @@
             if(pageId === 'page3') setTimeout(() => { map3.invalidateSize(); }, 200);
         }
 
+       // ฟังก์ชันสร้าง Base Layer สำหรับทุกหน้า
+        function getBaseLayers() {
+            return {
+                    "ถนน": L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'),
+                     "ดาวเทียม": L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}')
+            };
+        }
+        
         // --- ตั้งค่าหน้า 2 ---
 var base2 = getBaseLayers();
 var map2 = L.map('leaflet-map-p2', {
