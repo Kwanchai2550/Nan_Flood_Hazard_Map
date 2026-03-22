@@ -26,7 +26,7 @@
         .page-content.active { display: flex; }
 
         /* Sidebar */
-        .sidebar { width: var(--sidebar-w); background: var(--primary); color: white; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; }
+        .sidebar { width: var(--sidebar-w); background: var(--primary); color: white; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; overflow-y: auto; }
         .control-group { margin-bottom: 20px; }
         .label { display: block; margin-bottom: 10px; color: var(--blue); font-weight: bold; font-size: 0.9rem; }
         .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -41,8 +41,8 @@
         .video-container { width: 90%; max-width: 1800px; border: 4px solid white; border-radius: 8px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         video { width: 100%; display: block; }
 
-        /* Map Area Page 2 */
-        #leaflet-map { width: 100%; height: 100%; background: #ddd; }
+        /* Map Area */
+        .leaflet-map-container { width: 100%; height: 100%; background: #ddd; }
         
         /* Legend */
         .map-info { position: absolute; bottom: 20px; right: 20px; background: rgba(0,0,0,0.7); color: white; padding: 10px 15px; border-radius: 5px; font-size: 0.8rem; z-index: 1000; pointer-events: none; }
@@ -53,8 +53,9 @@
     <nav>
         <div class="nav-link active" onclick="showPage('page1')">1. จำลองพายุวิภา (Video)</div>
         <div class="nav-link" onclick="showPage('page2')">2. แผนที่ความเสี่ยง (Map)</div>
-        <div class="nav-link">3. หลักระดับน้ำ</div>
-        <div class="nav-link">4. ข้อมูลสำรวจจริง</div>
+        <div class="nav-link" onclick="showPage('page3')">3. ฉากทัศน์น้ำล้นคันฯ N.1</div>
+        <div class="nav-link">4. หลักระดับน้ำ</div>
+        <div class="nav-link">5. ข้อมูลสำรวจจริง</div>
     </nav>
 
     <section id="page1" class="page-content active">
@@ -73,102 +74,136 @@
     <section id="page2" class="page-content">
         <aside class="sidebar">
             <h3 style="border-bottom: 1px solid #444; padding-bottom: 10px;">🗺️ แผนที่ความเสี่ยง</h3>
-            
             <div class="control-group">
                 <span class="label">🗓️ คาบปีการเกิด (Return Period)</span>
                 <div class="btn-grid" id="rp-btns">
-                    <button class="btn active" onclick="updateMap('rp', '010', this)">10 ปี</button>
-                    <button class="btn" onclick="updateMap('rp', '025', this)">25 ปี</button>
-                    <button class="btn" onclick="updateMap('rp', '050', this)">50 ปี</button>
-                    <button class="btn" onclick="updateMap('rp', '100', this)">100 ปี</button>
-                    <button class="btn" onclick="updateMap('rp', '200', this)">200 ปี</button>
-                    <button class="btn" onclick="updateMap('rp', '500', this)">500 ปี</button>
+                    <button class="btn active" onclick="updateMap2('rp', '010', this)">10 ปี</button>
+                    <button class="btn" onclick="updateMap2('rp', '025', this)">25 ปี</button>
+                    <button class="btn" onclick="updateMap2('rp', '050', this)">50 ปี</button>
+                    <button class="btn" onclick="updateMap2('rp', '100', this)">100 ปี</button>
+                    <button class="btn" onclick="updateMap2('rp', '200', this)">200 ปี</button>
+                    <button class="btn" onclick="updateMap2('rp', '500', this)">500 ปี</button>
                 </div>
             </div>
-
             <div class="control-group">
                 <span class="label">📏 ความเสี่ยงน้ำท่วม (Depth)</span>
                 <div class="btn-grid" id="depth-btns">
-                    <button class="btn active" onclick="updateMap('depth', '030', this)">0.3 เมตร</button>
-                    <button class="btn" onclick="updateMap('depth', '050', this)">0.5 เมตร</button>
-                    <button class="btn" onclick="updateMap('depth', '100', this)">1.0 เมตร</button>
-                    <button class="btn" onclick="updateMap('depth', '150', this)">1.5 เมตร</button>
-                    <button class="btn" onclick="updateMap('depth', '300', this)">3.0 เมตร</button>
-                    <button class="btn" onclick="updateMap('depth', '500', this)">5.0 เมตร</button>
+                    <button class="btn active" onclick="updateMap2('depth', '030', this)">0.3 เมตร</button>
+                    <button class="btn" onclick="updateMap2('depth', '050', this)">0.5 เมตร</button>
+                    <button class="btn" onclick="updateMap2('depth', '100', this)">1.0 เมตร</button>
+                    <button class="btn" onclick="updateMap2('depth', '150', this)">1.5 เมตร</button>
+                    <button class="btn" onclick="updateMap2('depth', '300', this)">3.0 เมตร</button>
+                    <button class="btn" onclick="updateMap2('depth', '500', this)">5.0 เมตร</button>
                 </div>
             </div>
-
-            <p style="font-size: 0.75rem; color: #888; margin-top: auto;">* คลิกเลือก "ปี" หรือ "ความลึก" เพื่อเปลี่ยนเลเยอร์บนแผนที่</p>
         </aside>
-
         <div class="main-view">
-            <div id="leaflet-map"></div>
-            <div class="map-info" id="map-status">Layer: TR_010y.png</div>
+            <div id="leaflet-map-p2" class="leaflet-map-container"></div>
+            <div class="map-info" id="map-status-p2">Layer: TR_010y.png</div>
+        </div>
+    </section>
+
+    <section id="page3" class="page-content">
+        <aside class="sidebar">
+            <h3 style="border-bottom: 1px solid #444; padding-bottom: 10px;">🌊 ฉากทัศน์น้ำล้นคันฯ: สถานี N.1</h3>
+            <div class="control-group">
+                <span class="label">📏 ความสูงน้ำล้นคันฯ (เมตร)</span>
+                <div class="btn-grid" id="n1-h-btns">
+                    <button class="btn active" onclick="updateMap3('h', '010', this)">0.10 ม.</button>
+                    <button class="btn" onclick="updateMap3('h', '025', this)">0.25 ม.</button>
+                    <button class="btn" onclick="updateMap3('h', '050', this)">0.50 ม.</button>
+                    <button class="btn" onclick="updateMap3('h', '075', this)">0.75 ม.</button>
+                    <button class="btn" onclick="updateMap3('h', '100', this)">1.00 ม.</button>
+                    <button class="btn" onclick="updateMap3('h', '125', this)">1.25 ม.</button>
+                    <button class="btn" onclick="updateMap3('h', '150', this)">1.50 ม.</button>
+                </div>
+            </div>
+            <div class="control-group">
+                <span class="label">⏱️ ระยะเวลาน้ำล้นฯ (ชั่วโมง)</span>
+                <div class="btn-grid" id="n1-t-btns">
+                    <button class="btn active" onclick="updateMap3('t', '1', this)">1 ชม.</button>
+                    <button class="btn" onclick="updateMap3('t', '5', this)">5 ชม.</button>
+                    <button class="btn" onclick="updateMap3('t', '10', this)">10 ชม.</button>
+                    <button class="btn" onclick="updateMap3('t', '15', this)">15 ชม.</button>
+                    <button class="btn" onclick="updateMap3('t', '20', this)">20 ชม.</button>
+                    <button class="btn" onclick="updateMap3('t', '30', this)">30 ชม.</button>
+                    <button class="btn" onclick="updateMap3('t', '40', this)">40 ชม.</button>
+                </div>
+            </div>
+        </aside>
+        <div class="main-view">
+            <div id="leaflet-map-p3" class="leaflet-map-container"></div>
+            <div class="map-info" id="map-status-p3">Layer: N1_H010_T1.png</div>
         </div>
     </section>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <script>
-        // --- ส่วนการสลับหน้า ---
+        // --- ส่วนกลาง ---
+        var imageBounds = [
+            [18.74969577, 100.7501915],
+            [18.81643900, 100.8059337]
+        ];
+
         function showPage(pageId) {
             document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
             document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
             document.getElementById(pageId).classList.add('active');
             event.currentTarget.classList.add('active');
             
-            // ถ้าเปิดหน้า 2 ให้รีเฟรชขนาดแผนที่ Leaflet
-            if(pageId === 'page2') {
-                setTimeout(() => { map.invalidateSize(); }, 200);
-            }
+            if(pageId === 'page2') setTimeout(() => { map2.invalidateSize(); }, 200);
+            if(pageId === 'page3') setTimeout(() => { map3.invalidateSize(); }, 200);
         }
 
-        // --- ส่วนจัดการแผนที่ Leaflet (หน้า 2) ---
-        var map = L.map('leaflet-map').setView([18.783, 100.775], 15);
-        
-        // Base Map (ฟรี)
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(map);
+        // --- ตั้งค่าหน้า 2 ---
+        var map2 = L.map('leaflet-map-p2').setView([18.783, 100.775], 15);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map2);
 
-        // พิกัดขอบเขตที่คุณระบุ (แปลง UTM เป็น Lat/Long)
-        var imageBounds = [
-            [18.74969577, 100.7501915], // ล่างซ้าย
-            [18.81643900, 100.8059337]  // บนขวา
-        ];
+        var overlay2 = null;
+        var p2RP = "010";
+        var p2Depth = "030";
 
-        var currentOverlay = null;
-        var currentRP = "010";
-        var currentDepth = "030";
-
-        function updateMap(type, val, btn) {
-            // ปรับปุ่ม Active
-            const parent = btn.parentElement;
-            parent.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-
-            if (type === 'rp') currentRP = val;
-            if (type === 'depth') currentDepth = val;
-
-            // กำหนดชื่อไฟล์ตามที่คุณต้องการ
-            // ถ้าเลือกปี จะใช้ TR_xxx.png | ถ้าเลือกความลึก จะใช้ Prob_xxx.png
-            let fileName = (type === 'rp') ? `TR_${currentRP}y.png` : `Prob_${currentDepth}m.png`;
-
-            if (currentOverlay) {
-                map.removeLayer(currentOverlay);
+        function updateMap2(type, val, btn) {
+            if (btn) {
+                btn.parentElement.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
             }
+            if (type === 'rp') p2RP = val;
+            if (type === 'depth') p2Depth = val;
 
-            // สร้าง Overlay ใหม่
-            currentOverlay = L.imageOverlay(fileName, imageBounds, {
-                opacity: 0.7,
-                interactive: true
-            }).addTo(map);
+            let fileName = (type === 'rp') ? `TR_${p2RP}y.png` : `Prob_${p2Depth}m.png`;
+            if (overlay2) map2.removeLayer(overlay2);
+            overlay2 = L.imageOverlay(fileName, imageBounds, { opacity: 0.7 }).addTo(map2);
+            document.getElementById('map-status-p2').innerText = `แสดงไฟล์: ${fileName}`;
+        }
 
-            document.getElementById('map-status').innerText = `แสดงไฟล์: ${fileName}`;
+        // --- ตั้งค่าหน้า 3 ---
+        var map3 = L.map('leaflet-map-p3').setView([18.783, 100.775], 15);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map3);
+
+        var overlay3 = null;
+        var p3H = "010";
+        var p3T = "1";
+
+        function updateMap3(type, val, btn) {
+            if (btn) {
+                btn.parentElement.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            }
+            if (type === 'h') p3H = val;
+            if (type === 't') p3T = val;
+
+            // รูปแบบชื่อไฟล์: N1_H[height]_T[time].png
+            let fileName = `N1_H${p3H}_T${p3T}.png`;
+            if (overlay3) map3.removeLayer(overlay3);
+            overlay3 = L.imageOverlay(fileName, imageBounds, { opacity: 0.7 }).addTo(map3);
+            document.getElementById('map-status-p3').innerText = `แสดงไฟล์: ${fileName}`;
         }
 
         // โหลดเลเยอร์เริ่มต้น
-        updateMap('rp', '010', document.querySelector('#rp-btns .btn.active'));
+        updateMap2('rp', '010', document.querySelector('#rp-btns .btn.active'));
+        updateMap3('h', '010', document.querySelector('#n1-h-btns .btn.active'));
 
     </script>
 </body>
