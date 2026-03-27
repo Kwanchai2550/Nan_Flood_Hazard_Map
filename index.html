@@ -139,6 +139,62 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
+    <section id="page4" class="page-content">
+    <aside class="sidebar">
+        <h3 style="border-bottom: 1px solid #444; padding-bottom: 10px;">📏 วิเคราะห์ระดับน้ำ</h3>
+        
+        <div class="control-group">
+            <span class="label">📍 เลือกเกณฑ์อ้างอิงระดับน้ำ</span>
+            <div class="btn-grid">
+                <button class="btn active" id="mode-n1-btn" onclick="setRefMode('N1')">ระดับสมมุติ N.1</button>
+                <button class="btn" id="mode-msl-btn" onclick="setRefMode('MSL')">ระดับน้ำทะเล (MSL)</button>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <span class="label">⌨️ ระบุระดับน้ำที่ต้องการจำลอง</span>
+            <input type="number" id="water-input" step="0.01" value="9.00" 
+                   style="width: 100%; padding: 12px; border-radius: 4px; border: none; font-size: 1.2rem; text-align: center; font-weight: bold;">
+            <p id="input-hint" style="font-size: 0.75rem; color: #bdc3c7; margin-top: 5px;">(หน่วย: เมตร)</p>
+            <button class="btn active" style="width: 100%; margin-top: 10px; background: var(--blue);" onclick="calculateFlood()">คำนวณระดับน้ำท่วม</button>
+        </div>
+
+        <div id="summary-box" style="margin-top: auto; padding: 15px; background: rgba(0,0,0,0.3); border-radius: 8px; font-size: 0.85rem;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                <span>จุดที่อ้างอิงทั้งหมด:</span> <span id="total-points">0</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; color: #ff4d4d;">
+                <span>จุดที่น้ำท่วม (> 3.0 ม.):</span> <span id="flooded-points-300">0</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; color: #ff4d4d;">
+                <span>จุดที่น้ำท่วม (1.5-3.0 ม.):</span> <span id="flooded-points-150">0</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; color: #ff4d4d;">
+                <span>จุดที่น้ำท่วม (1.0-1.5 ม.):</span> <span id="flooded-points-100">0</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; color: #ff4d4d;">
+                <span>จุดที่น้ำท่วม (0.3-1.0 ม.):</span> <span id="flooded-points-030">0</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; color: #ff4d4d;">
+                <span>จุดที่น้ำท่วม (< 0.3 ม.):</span> <span id="flooded-points-000">0</span>
+            </div>
+        </div>
+    </aside>
+
+    <div class="main-view">
+        <div id="leaflet-map-p4" class="leaflet-map-container"></div>
+        
+        <div style="position: absolute; bottom: 30px; left: 20px; background: white; padding: 12px; border-radius: 8px; z-index: 1000; box-shadow: 0 4px 10px rgba(0,0,0,0.3); font-size: 0.8rem; color: #333;">
+            <b style="display:block; margin-bottom: 8px;">ความรุนแรง (ความลึกน้ำท่วม)</b>
+            <div style="display:flex; align-items:center; margin-bottom:4px;"><i style="width:15px; height:15px; background:#8b0000; display:inline-block; margin-right:8px; border-radius:50%;"></i> > 3.0 ม. (รุนแรงมาก)</div>
+            <div style="display:flex; align-items:center; margin-bottom:4px;"><i style="width:15px; height:15px; background:#ff0000; display:inline-block; margin-right:8px; border-radius:50%;"></i> 1.5 - 3.0 ม. (รุนแรง)</div>
+            <div style="display:flex; align-items:center; margin-bottom:4px;"><i style="width:15px; height:15px; background:#ffa500; display:inline-block; margin-right:8px; border-radius:50%;"></i> 1.0 - 1.50 ม. (ปานกลาง)</div>
+            <div style="display:flex; align-items:center; margin-bottom:4px;"><i style="width:15px; height:15px; background:#ffff00; display:inline-block; margin-right:8px; border-radius:50%; border:1px solid #ccc;"></i> 0.3 - 1.0 ม. (น้อย)</div>
+            <div style="display:flex; align-items:center;"><i style="width:15px; height:15px; background:#00ff00; display:inline-block; margin-right:8px; border-radius:50%;"></i> < 0.30 ม. (ไม่รุนแรง)</div>
+        </div>
+    </div>
+</section>
+    
     <script>
         // --- ส่วนกลาง ---
         var imageBounds = [
@@ -227,6 +283,141 @@ function updateMap3(type, val, btn) {
 updateMap2('rp', '010', document.querySelector('#rp-btns .btn.active'));
 updateMap3('h', '010', document.querySelector('#n1-h-btns .btn.active'));
 
+        // --- ส่วนประมวลผลหน้า 4 ---
+    let map4, pointLayer;
+    let refMode = 'N1'; // 'N1' หรือ 'MSL'
+    let rawData = []; // เก็บข้อมูลจาก CSV
+
+    // ข้อมูลจำลองพิกัด (ดึงจากไฟล์ที่คุณอัปโหลด)
+    const pointsData = [
+        <!-- {id:1, x:100.7904797, y:18.7962825, elev:201.84, n1:9.64}, -->
+        <!-- {id:2, x:100.7927756, y:18.8015613, elev:197.54, n1:5.34}, -->
+        <!-- {id:10, x:100.7735179, y:18.7778203, elev:199.25, n1:7.05}, -->
+        <!-- {id:11, x:100.7717664, y:18.7755282, elev:200.12, n1:7.92}, -->
+        // ... (ระบบจะโหลดข้อมูลจริงจาก CSV ต่อไป)
+         {id:1, x:100.7905, y:18.7963, elev:201.84, n1:9.64},
+         {id:2, x:100.7928, y:18.8016, elev:197.54, n1:5.34},
+         {id:3, x:100.7901, y:18.7929, elev:201.75, n1:9.55},
+         {id:4, x:100.7839, y:18.7875, elev:201.1, n1:8.9},
+         {id:5, x:100.7865, y:18.7841, elev:199.17, n1:6.97},
+         {id:7, x:100.7854, y:18.7826, elev:197.85, n1:5.65},
+         {id:8, x:100.7813, y:18.7776, elev:198.31, n1:6.11},
+         {id:9, x:100.779, y:18.7755, elev:198.05, n1:5.85},
+         {id:10, x:100.7735, y:18.7778, elev:199.26, n1:7.06},
+         {id:11, x:100.7718, y:18.7755, elev:200.12, n1:7.92},
+         {id:12, x:100.7691, y:18.7753, elev:199.39, n1:7.19},
+         {id:13, x:100.7635, y:18.7748, elev:199.09, n1:6.89},
+         {id:14, x:100.7721, y:18.7718, elev:197.09, n1:4.89},
+         {id:15, x:100.7726, y:18.7679, elev:197.82, n1:5.62},
+         {id:16, x:100.773, y:18.7644, elev:197.77, n1:5.57},
+         {id:17, x:100.7815, y:18.7704, elev:198.25, n1:6.05},
+         {id:18, x:100.7799, y:18.7744, elev:197.27, n1:5.07},
+         {id:19, x:100.7817, y:18.7757, elev:193.66, n1:1.46},
+         {id:20, x:100.7841, y:18.7782, elev:197.44, n1:5.24},
+         {id:6, x:100.7764, y:18.7797, elev:199.31, n1:7.11},
+         {id:21, x:100.7813, y:18.7811, elev:198.03, n1:5.83},
+         {id:22, x:100.7761, y:18.7768, elev:198.62, n1:6.42},
+         {id:23, x:100.7676, y:18.7717, elev:197.46, n1:5.26},
+         {id:24, x:100.7862, y:18.7889, elev:201.79, n1:9.59},
+         {id:25, x:100.7875, y:18.7866, elev:200.39, n1:8.19},
+         {id:26, x:100.7938, y:18.8057, elev:201.68, n1:9.48},
+         {id:27, x:100.7984, y:18.8055, elev:204.14, n1:11.94},
+         {id:28, x:100.7924, y:18.7947, elev:199.86, n1:7.66},
+         {id:29, x:100.7845, y:18.7766, elev:200.52, n1:8.32},
+         {id:30, x:100.7753, y:18.7533, elev:197.55, n1:5.35},
+         {id:31, x:100.7694, y:18.765, elev:197.96, n1:5.76},
+         {id:31, x:100.7733, y:18.7558, elev:197.43, n1:5.23},
+       
+    ];
+
+    function initMap4() {
+        if (map4) return;
+        const base4 = getBaseLayers();
+        map4 = L.map('leaflet-map-p4', { layers: [base4["ดาวเทียม (Google)"]] }).setView([18.783, 100.775], 14);
+        L.control.layers(base4).addTo(map4);
+        pointLayer = L.layerGroup().addTo(map4);
+        
+        calculateFlood(); // คำนวณครั้งแรก
+    }
+
+    function setRefMode(mode) {
+        refMode = mode;
+        document.getElementById('mode-n1-btn').classList.toggle('active', mode === 'N1');
+        document.getElementById('mode-msl-btn').classList.toggle('active', mode === 'MSL');
+        document.getElementById('water-input').value = (mode === 'N1') ? "9.00" : "201.00";
+        calculateFlood();
+    }
+
+    function getColor(depth) {
+        if (depth > 3.0) return '#8b0000'; // แดงเข้ม
+        if (depth > 1.5) return '#ff0000'; // แดง
+        if (depth > 1.0) return '#ffa500'; // ส้ม
+        if (depth > 0.3) return '#ffff00'; // เหลือง
+        return '#00ff00'; // เขียว
+    }
+
+    function calculateFlood() {
+        const inputVal = parseFloat(document.getElementById('water-input').value);
+        pointLayer.clearLayers();
+        let floodCount000 = 0;
+        let floodCount030 = 0;
+        let floodCount100 = 0;
+        let floodCount150 = 0;
+        let floodCount300 = 0;
+
+        pointsData.forEach(pt => {
+            // คำนวณความลึก: ระดับน้ำที่ใส่มา - ระดับพื้นดิน (Elev หรือ N1_Based)
+            const groundLevel = (refMode === 'N1') ? pt.n1 : pt.elev;
+            const depth = Math.max(0, inputVal - groundLevel);
+
+            if (depth <= 0.3) floodCount000++;
+            if (depth > 0.3 && depth <= 1.0) floodCount030++;
+            if (depth > 1.0 && depth <= 1.5) floodCount100++;
+            if (depth > 1.5 && depth <= 3.0) floodCount150++;
+            if (depth > 3.0) floodCount300++;
+
+            L.circleMarker([pt.y, pt.x], {
+                radius: 8,
+                fillColor: getColor(depth),
+                color: "#fff",
+                weight: 2,
+                opacity: 1,
+                fillOpacity: 0.8
+            }).bindPopup(`
+                <div style="font-family:Sarabun">
+                    <b>จุดอ้างอิง ID: ${pt.id}</b><br>
+                    พื้นดิน (MSL): ${pt.elev} ม.<br>
+                    พื้นดิน (N1): ${pt.n1} ม.<br><hr>
+                    <b>ความลึกน้ำท่วม: <span style="color:red; font-size:1.1rem;">${depth.toFixed(2)} ม.</span></b>
+                </div>
+            `).addTo(pointLayer);
+        });
+
+        document.getElementById('total-points').innerText = pointsData.length;
+        document.getElementById('flooded-points-000').innerText = floodCount000;
+        document.getElementById('flooded-points-030').innerText = floodCount030;
+        document.getElementById('flooded-points-100').innerText = floodCount100;
+        document.getElementById('flooded-points-150').innerText = floodCount150;
+        document.getElementById('flooded-points-300').innerText = floodCount300;
+    }
+
+    // อัปเดต showPage ให้รองรับหน้า 4
+    function showPage(id) {
+        document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        event.target.classList.add('active');
+        
+        if(id === 'page2') setTimeout(()=>map2.invalidateSize(), 300);
+        if(id === 'page3') setTimeout(()=>map3.invalidateSize(), 300);
+        if(id === 'page4') {
+            setTimeout(() => {
+                initMap4();
+                map4.invalidateSize();
+            }, 300);
+        }
+    }
+        
     </script>
 </body>
 </html>
